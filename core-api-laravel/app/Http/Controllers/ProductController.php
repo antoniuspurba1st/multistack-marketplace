@@ -7,15 +7,31 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+
     public function index()
     {
-        return Product::all();
+        return Product::latest()->get();
+    }
+
+    public function show($id)
+    {
+        return Product::findOrFail($id);
     }
 
     public function store(Request $request)
     {
-        $product = Product::create($request->all());
 
-        return response()->json($product);
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric',
+            'stock' => 'required|integer'
+        ]);
+
+        $product = Product::create($validated);
+
+        return response()->json($product, 201);
     }
+
 }
