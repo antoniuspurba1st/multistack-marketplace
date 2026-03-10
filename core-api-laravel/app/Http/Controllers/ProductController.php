@@ -8,10 +8,20 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
 
-    public function index()
-    {
-        return Product::latest()->get();
+    public function index(Request $request)
+{
+
+    $query = Product::with('images');
+
+    if($request->search){
+        $query->where('name','like','%'.$request->search.'%');
     }
+
+    $products = $query->paginate(10);
+
+    return response()->json($products);
+
+}
 
     public function show($id)
     {

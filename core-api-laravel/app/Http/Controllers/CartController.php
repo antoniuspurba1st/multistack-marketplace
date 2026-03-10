@@ -34,4 +34,16 @@ class CartController extends Controller
     return response()->json($cart);
 
 }
+
+
+public function remove($id)
+{
+    $item = CartItem::findOrFail($id);
+
+    $item->delete();
+
+    return response()->json([
+        "message"=>"Item removed"
+    ]);
+}
 }

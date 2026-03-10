@@ -147,6 +147,38 @@ Order created
 
 ---
 
+# Testing
+
+The Laravel core API includes **PHPUnit Feature Tests** that verify the core marketplace functionality.
+
+Current test coverage includes:
+
+- Product listing and creation
+- Product search and pagination
+- Cart operations
+- Checkout process
+- Order creation
+- Product image upload and storage
+
+Feature test files:
+
+- tests/Feature/ProductTest.php
+- tests/Feature/CartTest.php
+- tests/Feature/CheckoutTest.php
+- tests/Feature/ProductImageTest.php
+
+Current result:
+
+Tests: 15 passed (122 assertions)
+
+Run the test suite with:
+
+`php artisan test`
+
+These tests ensure that the main ecommerce flows of the marketplace API continue working correctly as the project evolves.
+
+---
+
 # Running the Project (Development)
 
 Start each service individually.
@@ -191,29 +223,3 @@ It also serves as a **portfolio project for backend architecture and microservic
 
 ---
 
-# LinkedIn Caption (Optional)
-
-Just finished building a polyglot microservices marketplace backend.
-
-Tech stack used:
-
-- Laravel
-- Next.js
-- Go
-- Node.js
-- Django
-- PostgreSQL
-
-Implemented features:
-
-- Product system
-- Cart system
-- Checkout flow
-- Order history
-- Microservices architecture
-
-This project was a fun way to explore how different technologies can work together in a scalable backend system.
-
-Next step: building the frontend and adding real-time features.
-
-#backend #microservices #laravel #nodejs #golang #django

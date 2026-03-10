@@ -38,14 +38,16 @@ class OrderController extends Controller
 
         foreach($cart->items as $item){
 
-            OrderItem::create([
-                'order_id'=>$order->id,
-                'product_id'=>$item->product_id,
-                'quantity'=>$item->quantity,
-                'price'=>$item->product->price
-            ]);
+    OrderItem::create([
+        'order_id'=>$order->id,
+        'product_id'=>$item->product_id,
+        'quantity'=>$item->quantity,
+        'price'=>$item->product->price
+    ]);
 
-        }
+    $item->product->decrement('stock',$item->quantity);
+
+}
 
         $cart->items()->delete();
 
