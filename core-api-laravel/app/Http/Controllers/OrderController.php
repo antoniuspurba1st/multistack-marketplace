@@ -6,54 +6,60 @@ use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\RecommendationService;
 
 class OrderController extends Controller
 {
 
     public function checkout(Request $request)
-    {
+{
 
-        $cart = Cart::where('user_id',$request->user_id)
-            ->with('items.product')
-            ->first();
+    $cart = Cart::where('user_id',$request->user_id)
+        ->with('items.product')
+        ->first();
 
-        if(!$cart){
-            return response()->json([
-                "message"=>"Cart not found"
-            ],404);
-        }
+    if(!$cart){
+        return response()->json([
+            "message"=>"Cart not found"
+        ],404);
+    }
 
-        $total = 0;
+    $total = 0;
 
-        foreach($cart->items as $item){
+    foreach($cart->items as $item){
+        $total += $item->product->price * $item->quantity;
+    }
 
-            $total += $item->product->price * $item->quantity;
-
-        }
-
-        $order = Order::create([
-            'user_id'=>$request->user_id,
-            'total_price'=>$total
-        ]);
-
-        foreach($cart->items as $item){
-
-    OrderItem::create([
-        'order_id'=>$order->id,
-        'product_id'=>$item->product_id,
-        'quantity'=>$item->quantity,
-        'price'=>$item->product->price
+    $order = Order::create([
+        'user_id'=>$request->user_id,
+        'total_price'=>$total
     ]);
 
-    $item->product->decrement('stock',$item->quantity);
+    foreach($cart->items as $item){
 
-}
+        OrderItem::create([
+            'order_id'=>$order->id,
+            'product_id'=>$item->product_id,
+            'quantity'=>$item->quantity,
+            'price'=>$item->product->price
+        ]);
 
-        $cart->items()->delete();
-
-        return response()->json($order);
-
+        $item->product->decrement('stock',$item->quantity);
     }
+
+    // CALL DJANGO MICROSERVICE
+    $recommendationService = new RecommendationService();
+
+    $recommendations = $recommendationService->getRecommendations($request->user_id);
+
+    $cart->items()->delete();
+
+    return response()->json([
+        "message"=>"Checkout successful",
+        "order"=>$order,
+        "recommendations"=>$recommendations
+    ]);
+}
     public function history($user_id)
 {
     $orders = Order::where('user_id',$user_id)

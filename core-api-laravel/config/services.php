@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'recommendation' => [
+    'url' => env('RECOMMENDATION_SERVICE_URL', 'http://localhost:8002'),
+],
+
 ];
