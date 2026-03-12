@@ -45,19 +45,22 @@ class CheckoutTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('message', 'Checkout successful')
             ->assertJsonStructure([
+                'success',
                 'message',
-                'order' => [
-                    'id',
-                    'user_id',
-                    'total_price',
-                    'created_at',
-                    'updated_at',
+                'data' => [
+                    'order' => [
+                        'id',
+                        'user_id',
+                        'total_price',
+                        'created_at',
+                        'updated_at',
+                    ],
+                    'recommendations',
                 ],
-                'recommendations',
             ]);
 
         $this->assertDatabaseHas('orders', [
-            'id' => $response->json('order.id'),
+            'id' => $response->json('data.order.id'),
             'user_id' => $user->id,
         ]);
 
@@ -74,7 +77,7 @@ class CheckoutTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        $order = Order::findOrFail($response->json('order.id'));
+        $order = Order::findOrFail($response->json('data.order.id'));
 
         $this->assertDatabaseCount('order_items', 2);
         $this->assertDatabaseHas('order_items', [
@@ -180,7 +183,7 @@ class CheckoutTest extends TestCase
 
         $event = OutboxEvent::first();
 
-        $this->assertSame($response->json('order.id'), $event->payload['order_id']);
+        $this->assertSame($response->json('data.order.id'), $event->payload['order_id']);
         $this->assertSame($user->id, $event->payload['user_id']);
     }
 
@@ -197,7 +200,7 @@ class CheckoutTest extends TestCase
         $record = IdempotencyKey::where('key', 'checkout-key-2')->firstOrFail();
 
         $this->assertSame('Checkout successful', $record->response['message']);
-        $this->assertSame([['product_id' => 999]], $record->response['recommendations']);
+        $this->assertSame([['product_id' => 999]], $record->response['data']['recommendations']);
     }
 
     private function createCartWithItems(): array

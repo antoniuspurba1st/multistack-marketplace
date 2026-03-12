@@ -27,13 +27,17 @@ class ProductImageTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertJsonStructure([
-                'id',
-                'product_id',
-                'image_path',
-                'created_at',
-                'updated_at',
+                'success',
+                'message',
+                'data' => [
+                    'id',
+                    'product_id',
+                    'image_path',
+                    'created_at',
+                    'updated_at',
+                ],
             ])
-            ->assertJsonPath('product_id', $product->id);
+            ->assertJsonPath('data.product_id', $product->id);
     }
 
     public function test_image_is_stored_correctly(): void
@@ -51,7 +55,7 @@ class ProductImageTest extends TestCase
 
         $response->assertStatus(200);
 
-        Storage::disk('public')->assertExists($response->json('image_path'));
+        Storage::disk('public')->assertExists($response->json('data.image_path'));
     }
 
     public function test_database_record_is_created(): void
@@ -71,7 +75,7 @@ class ProductImageTest extends TestCase
 
         $this->assertDatabaseHas('product_images', [
             'product_id' => $product->id,
-            'image_path' => $response->json('image_path'),
+            'image_path' => $response->json('data.image_path'),
         ]);
     }
 }

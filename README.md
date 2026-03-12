@@ -1,43 +1,49 @@
 # Polyglot Microservices Marketplace
 
-A full-stack marketplace project built to showcase a production-style polyglot microservices architecture.
+A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks.
 
-The system combines:
-- `Next.js` for the frontend
-- `Laravel` as the core API gateway and marketplace backend
-- `Django` for AI recommendations
-- `Go` for authentication
-- `Node.js` for realtime chat
-- `PostgreSQL` as the primary database
+## Progress Update - March 12, 2026
 
----
+Today's progress focused on expanding the repo from backend-heavy services into a more complete product ecosystem:
 
-# Tech Stack
+- `frontend-nextjs` now has a real storefront flow: homepage, product listing, product detail, cart, checkout success, and order history.
+- `frontend-nextjs/lib/api.ts` already talks to the Laravel gateway for products, cart, checkout, and orders.
+- `search-service-rust` was bootstrapped with `Axum` and exposes a simple `/search` endpoint on port `4000`.
+- `seller-service-rails` was initialized as a dedicated Rails service for future seller-side capabilities.
+- `admin-vue-dashboard` was added as the base for an admin panel in Vue 3 + Vite.
+- `core-api-laravel` continues to own marketplace flows such as product management, cart, checkout, orders, stock protection, idempotency, and outbox processing.
 
-## Frontend
-- Next.js
-
-## Core Backend
-- Laravel (PHP)
-
-## Microservices
-- Go - Authentication Service
-- Node.js - Realtime Chat Service
-- Django - AI Recommendation Service
-
-## Database
-- PostgreSQL
+This means the project is no longer just "Laravel + supporting demos". It is now moving into a multi-app marketplace workspace with dedicated surfaces for buyers, admins, sellers, and supporting services.
 
 ---
 
-# Architecture
+## Current Workspace
 
-The frontend sends requests to the Laravel API Gateway, which handles marketplace business logic and communicates with supporting microservices via HTTP.
+### User-facing apps
+- `frontend-nextjs` - buyer storefront built with Next.js App Router
+
+### Core platform
+- `core-api-laravel` - API gateway and main marketplace backend
+- `recommendation-ai-django` - recommendation service
+- `auth-service-go` - authentication service
+- `chat-service-node` - realtime chat service
+
+### New apps/services added today
+- `search-service-rust` - search service prototype
+- `seller-service-rails` - seller service scaffold
+- `admin-vue-dashboard` - admin dashboard scaffold
+
+### Primary database
+- `PostgreSQL`
+
+---
+
+## Architecture
 
 ```text
-Client
+Buyer
   |
-Next.js
+Next.js Storefront
   |
 Laravel API Gateway
   |------------------------------\
@@ -47,154 +53,84 @@ Marketplace Logic                  \
 PostgreSQL                      Django Recommendation Service
                                 Go Authentication Service
                                 Node.js Chat Service
+                                Rust Search Service (prototype)
+
+Admin -> Vue Dashboard (planned integration)
+Seller -> Rails Seller Service (planned integration)
 ```
 
-Laravel remains the main entry point for:
-- product management
+Laravel remains the central orchestrator for:
+
+- product catalog
 - cart operations
 - checkout and order creation
 - stock protection
-- database transactions
-- orchestration with other services
-
----
-
-# Core Backend Features
-
-## Product System
-- Create products
-- List products
-- Search products
-- Pagination
-- Upload product images
-
-## Cart System
-- Add items to cart
-- View cart items
-- Remove cart items
-
-## Checkout System
-- Convert cart into order
-- Create order items
-- Atomically decrement stock
-- Support idempotent checkout with `Idempotency-Key`
-- Create outbox events for asynchronous processing
-- Fetch recommendation results from Django service
-
-## Order System
-- Order history
-
----
-
-# Production-Style Backend Improvements
-
-The Laravel API Gateway has been refactored to better resemble real-world backend architecture.
-
-## 1. Request Validation
-Checkout now validates incoming requests before any business logic runs.
-
-Example:
-
-```php
-$request->validate([
-    'user_id' => 'required|integer',
-]);
-```
-
-## 2. Reduced Transaction Scope
-The checkout transaction is limited to database-only operations:
-- cart lookup
-- order creation
-- order item creation
-- atomic stock decrement
+- idempotent requests
 - outbox event creation
-- idempotency response storage
-
-External microservice calls are executed only after the transaction commits.
-
-## 3. Atomic Stock Protection
-Stock is updated using an atomic conditional decrement to reduce race-condition risk during concurrent checkouts.
-
-## 4. Idempotent Checkout
-Checkout supports the `Idempotency-Key` header:
-- duplicate requests return the previously stored response
-- repeated checkout calls do not create duplicate orders
-
-## 5. Outbox Pattern
-Checkout writes `OrderCreated` events into the `outbox_events` table for asynchronous processing.
-
-## 6. Structured Logging
-Important backend events are now logged, including:
-- insufficient stock
-- checkout completion
-- recommendation service failure
-- outbox event processing
-
-## 7. Outbox Event Processor
-A Laravel Artisan command processes pending outbox events:
-
-```bash
-php artisan outbox:process
-```
-
-The command:
-- fetches unprocessed events
-- logs their payload
-- marks them as processed
-
-## 8. Scheduler Integration
-The outbox processor is registered in Laravel's scheduler and runs every minute.
-
-## 9. Recommendation Service Caching
-Recommendation responses from the Django AI service are cached for 5 minutes to reduce repeated network calls and improve resilience.
+- recommendation calls
 
 ---
 
-# Database Schema
+## Implemented Marketplace Features
 
-Main marketplace tables:
+### Frontend storefront
+- Homepage with featured products
+- Product listing with live data from Laravel
+- Product detail page
+- Add-to-cart flow
+- Cart summary page
+- Checkout flow
+- Checkout success page with recommendations
+- Order history page
 
-```text
-users
-products
-carts
-cart_items
-orders
-order_items
-idempotency_keys
-outbox_events
-```
+### Laravel backend
+- Product CRUD foundations
+- Search and pagination
+- Product image upload
+- Cart add/view/remove
+- Transaction-safe checkout
+- Atomic stock decrement
+- `Idempotency-Key` support
+- Outbox event persistence
+- Order history API
+- Recommendation service integration with caching
 
-Key supporting tables:
-- `idempotency_keys` stores replayable checkout responses
-- `outbox_events` stores domain events awaiting processing
-
-Relationships:
-
-```text
-User
- +- Cart
-    +- CartItems
-       +- Product
-
-User
- +- Orders
-    +- OrderItems
-       +- Product
-```
+### Supporting services
+- Django recommendation endpoint integrated into checkout
+- Go auth service present in workspace
+- Node chat service present in workspace
+- Rust search service bootstrapped and runnable
+- Rails seller service bootstrapped
+- Vue admin dashboard bootstrapped
 
 ---
 
-# API Endpoints
+## Backend Engineering Patterns Already Present
 
-## Products
+- request validation
+- reduced transaction scope
+- atomic stock protection
+- idempotent checkout
+- outbox pattern
+- structured logging
+- scheduled outbox processing
+- recommendation caching
+
+These patterns live primarily in `core-api-laravel` and make the project stronger than a basic CRUD demo.
+
+---
+
+## API Endpoints in Active Use
+
+### Products
 
 ```text
 GET    /api/products
+GET    /api/products/{id}
 POST   /api/products
 ```
 
-## Cart
+### Cart
 
 ```text
 POST   /api/cart/add
@@ -202,53 +138,25 @@ GET    /api/cart/{user_id}
 DELETE /api/cart/item/{id}
 ```
 
-## Orders
+### Orders
 
 ```text
 POST   /api/checkout
 GET    /api/orders/{user_id}
 ```
 
-### Checkout Notes
-- Accepts `user_id` in the request body
-- Supports `Idempotency-Key` in request headers
-- Returns `message`, `order`, and `recommendations`
+Checkout notes:
+
+- accepts `user_id` in the request body
+- supports `Idempotency-Key` in request headers
+- returns `order` and `recommendations`
 
 ---
 
-# Checkout Flow
+## Testing
 
-```text
-User
-  |
-Browse products
-  |
-Add items to cart
-  |
-POST /api/checkout
-  |
-Laravel validates request
-  |
-Laravel creates order transactionally
-  |
-Stock is decremented atomically
-  |
-Outbox event is stored
-  |
-Transaction commits
-  |
-Laravel requests recommendations from Django
-  |
-Response returned to client
-```
+The Laravel API already has feature coverage for the main marketplace workflows and backend hardening behaviors, including:
 
----
-
-# Testing
-
-The Laravel API includes PHPUnit test coverage for core marketplace workflows and backend hardening behavior.
-
-Covered scenarios include:
 - product listing, creation, search, and pagination
 - cart add/view/remove
 - checkout success flow
@@ -257,78 +165,88 @@ Covered scenarios include:
 - validation failure
 - idempotent checkout replay
 - rollback on insufficient stock
-- outbox event creation
-- outbox processor command
+- outbox event creation and processing
 - scheduler registration
-- recommendation service caching and fallback
+- recommendation caching and fallback
 - product image upload and persistence
 
-Example test files:
-- `core-api-laravel/tests/Feature/ProductTest.php`
-- `core-api-laravel/tests/Feature/CartTest.php`
-- `core-api-laravel/tests/Feature/CheckoutTest.php`
-- `core-api-laravel/tests/Feature/ProcessOutboxEventsCommandTest.php`
-- `core-api-laravel/tests/Unit/RecommendationServiceTest.php`
-
-Run tests:
+Run backend tests with:
 
 ```bash
 cd core-api-laravel
 php artisan test
 ```
 
-Current result:
-- `24 passed`
-
 ---
 
-# Running the Project
+## Running the Project
 
-Start each service individually in development mode.
+Start each app/service in its own terminal.
 
-## Laravel API Gateway
+### Laravel API Gateway
 
 ```bash
 cd core-api-laravel
 php artisan serve
 ```
 
-## Django Recommendation Service
+### Next.js Storefront
+
+```bash
+cd frontend-nextjs
+npm install
+npm run dev
+```
+
+### Django Recommendation Service
 
 ```bash
 cd recommendation-ai-django
 python manage.py runserver 8002
 ```
 
-## Go Authentication Service
+### Go Authentication Service
 
 ```bash
+cd auth-service-go
 go run main.go
 ```
 
-## Node.js Chat Service
+### Node.js Chat Service
 
 ```bash
+cd chat-service-node
 node server.js
 ```
 
-## Next.js Frontend
+### Rust Search Service
 
 ```bash
-cd frontend-nextjs
+cd search-service-rust
+cargo run
+```
+
+### Rails Seller Service
+
+```bash
+cd seller-service-rails
+bin/rails server
+```
+
+### Vue Admin Dashboard
+
+```bash
+cd admin-vue-dashboard
+npm install
 npm run dev
 ```
 
-## Optional Scheduled Processing
-
-To run Laravel scheduler locally:
+### Optional Laravel background processing
 
 ```bash
 cd core-api-laravel
 php artisan schedule:work
 ```
-
-To process outbox events manually:
 
 ```bash
 cd core-api-laravel
@@ -337,17 +255,15 @@ php artisan outbox:process
 
 ---
 
-# Why This Project Matters
+## Why This Project Matters
 
-This project is designed as a backend engineering portfolio project to demonstrate:
-- polyglot microservices communication
+This repo is evolving into a stronger backend/full-stack portfolio project because it demonstrates:
+
+- polyglot service boundaries across PHP, Python, Go, Node.js, Rust, Ruby, and TypeScript
 - API gateway orchestration
 - transaction-safe checkout design
-- idempotent API behavior
-- atomic inventory protection
-- outbox pattern implementation
-- scheduled background processing
-- structured logging
-- resilient microservice integration with caching
+- frontend integration against live backend APIs
+- room for buyer, admin, and seller experiences in separate apps
+- production-style patterns such as idempotency, stock protection, and outbox processing
 
-It is intended to show not only CRUD functionality, but also backend design patterns that are common in production systems.
+The main value is not only that the marketplace works, but that the architecture is being expanded in a realistic direction.

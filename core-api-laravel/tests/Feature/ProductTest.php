@@ -20,25 +20,29 @@ class ProductTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertJsonStructure([
-                'current_page',
+                'success',
+                'message',
                 'data' => [
-                    '*' => [
-                        'id',
-                        'user_id',
-                        'name',
-                        'description',
-                        'price',
-                        'stock',
-                        'created_at',
-                        'updated_at',
-                        'images',
+                    'current_page',
+                    'data' => [
+                        '*' => [
+                            'id',
+                            'user_id',
+                            'name',
+                            'description',
+                            'price',
+                            'stock',
+                            'created_at',
+                            'updated_at',
+                            'images',
+                        ],
                     ],
+                    'per_page',
+                    'total',
                 ],
-                'per_page',
-                'total',
             ]);
 
-        $this->assertCount(3, $response->json('data'));
+        $this->assertCount(3, $response->json('data.data'));
     }
 
     public function test_can_create_product(): void
@@ -58,14 +62,18 @@ class ProductTest extends TestCase
         $response
             ->assertStatus(201)
             ->assertJsonStructure([
-                'id',
-                'user_id',
-                'name',
-                'description',
-                'price',
-                'stock',
-                'created_at',
-                'updated_at',
+                'success',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'name',
+                    'description',
+                    'price',
+                    'stock',
+                    'created_at',
+                    'updated_at',
+                ],
             ])
             ->assertJsonFragment([
                 'user_id' => $user->id,
@@ -88,11 +96,11 @@ class ProductTest extends TestCase
 
         $response
             ->assertStatus(200)
-            ->assertJsonPath('current_page', 2)
-            ->assertJsonPath('per_page', 10)
-            ->assertJsonPath('total', 15);
+            ->assertJsonPath('data.current_page', 2)
+            ->assertJsonPath('data.per_page', 10)
+            ->assertJsonPath('data.total', 15);
 
-        $this->assertCount(5, $response->json('data'));
+        $this->assertCount(5, $response->json('data.data'));
     }
 
     public function test_product_search_works(): void
@@ -105,9 +113,9 @@ class ProductTest extends TestCase
 
         $response
             ->assertStatus(200)
-            ->assertJsonPath('total', 2);
+            ->assertJsonPath('data.total', 2);
 
-        $names = collect($response->json('data'))->pluck('name');
+        $names = collect($response->json('data.data'))->pluck('name');
 
         $this->assertTrue($names->contains('Apple iPhone 16'));
         $this->assertTrue($names->contains('Apple Watch Pro'));

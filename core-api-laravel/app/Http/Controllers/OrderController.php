@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiResponse;
 use App\Models\Cart;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
@@ -27,7 +28,10 @@ class OrderController extends Controller
             $existing = IdempotencyKey::where('key', $idempotencyKey)->first();
 
             if ($existing) {
-                return response()->json($existing->response);
+                return ApiResponse::success(
+                    $existing->response['data'] ?? null,
+                    $existing->response['message'] ?? 'OK'
+                );
             }
         }
 
@@ -38,9 +42,7 @@ class OrderController extends Controller
                     ->first();
 
                 if (! $cart || $cart->items->isEmpty()) {
-                    throw new HttpResponseException(response()->json([
-                        'message' => 'Cart not found',
-                    ], 404));
+                    throw new HttpResponseException(ApiResponse::error('Cart not found', 404));
                 }
 
                 $total = $cart->items->sum(function ($item) {
@@ -88,8 +90,10 @@ class OrderController extends Controller
 
                 $responseData = [
                     'message' => 'Checkout successful',
-                    'order' => $order->fresh('items.product'),
-                    'recommendations' => [],
+                    'data' => [
+                        'order' => $order->fresh('items.product'),
+                        'recommendations' => [],
+                    ],
                 ];
 
                 if ($idempotencyKey) {
@@ -107,9 +111,7 @@ class OrderController extends Controller
         } catch (HttpResponseException $exception) {
             throw $exception;
         } catch (\RuntimeException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], 422);
+            return ApiResponse::error($exception->getMessage(), 422);
         }
 
         $recommendations = app(RecommendationService::class)
@@ -117,8 +119,10 @@ class OrderController extends Controller
 
         $responseData = [
             'message' => 'Checkout successful',
-            'order' => $transactionResult['order']->fresh('items.product'),
-            'recommendations' => $recommendations,
+            'data' => [
+                'order' => $transactionResult['order']->fresh('items.product'),
+                'recommendations' => $recommendations,
+            ],
         ];
 
         if ($idempotencyKey) {
@@ -131,7 +135,7 @@ class OrderController extends Controller
             'user_id' => $validated['user_id'],
         ]);
 
-        return response()->json($responseData);
+        return ApiResponse::success($responseData['data'], $responseData['message']);
     }
 
     public function history($user_id)
@@ -141,6 +145,6 @@ class OrderController extends Controller
             ->latest()
             ->get();
 
-        return response()->json($orders);
+        return ApiResponse::success($orders);
     }
 }

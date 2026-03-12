@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Helpers\ApiResponse;
 use App\Models\Cart;
 use App\Models\CartItem;
 
@@ -21,7 +22,7 @@ class CartController extends Controller
             'quantity' => $request->quantity ?? 1
         ]);
 
-        return response()->json($item);
+        return ApiResponse::success($item);
 
     }
     public function show($user_id)
@@ -31,7 +32,7 @@ class CartController extends Controller
         ->with('items.product')
         ->first();
 
-    return response()->json($cart);
+    return ApiResponse::success($cart);
 
 }
 
@@ -42,8 +43,6 @@ public function remove($id)
 
     $item->delete();
 
-    return response()->json([
-        "message"=>"Item removed"
-    ]);
+    return ApiResponse::success(null, 'Item removed');
 }
 }

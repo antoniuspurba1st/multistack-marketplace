@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use App\Models\ProductImage;
 
@@ -22,7 +23,7 @@ class ProductImageController extends Controller
             'image_path' => $path
         ]);
 
-        return response()->json($image);
+        return ApiResponse::success($image);
 
     }
 }

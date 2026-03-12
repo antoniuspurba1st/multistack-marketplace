@@ -27,12 +27,16 @@ class CartTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertJsonStructure([
-                'id',
-                'cart_id',
-                'product_id',
-                'quantity',
-                'created_at',
-                'updated_at',
+                'success',
+                'message',
+                'data' => [
+                    'id',
+                    'cart_id',
+                    'product_id',
+                    'quantity',
+                    'created_at',
+                    'updated_at',
+                ],
             ])
             ->assertJsonFragment([
                 'product_id' => $product->id,
@@ -69,25 +73,29 @@ class CartTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertJsonStructure([
-                'id',
-                'user_id',
-                'items' => [
-                    '*' => [
-                        'id',
-                        'cart_id',
-                        'product_id',
-                        'quantity',
-                        'product' => [
+                'success',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'items' => [
+                        '*' => [
                             'id',
-                            'name',
-                            'price',
-                            'stock',
+                            'cart_id',
+                            'product_id',
+                            'quantity',
+                            'product' => [
+                                'id',
+                                'name',
+                                'price',
+                                'stock',
+                            ],
                         ],
                     ],
                 ],
             ]);
 
-        $this->assertCount(2, $response->json('items'));
+        $this->assertCount(2, $response->json('data.items'));
     }
 
     public function test_can_remove_cart_item(): void
@@ -99,7 +107,9 @@ class CartTest extends TestCase
         $response
             ->assertStatus(200)
             ->assertJson([
+                'success' => true,
                 'message' => 'Item removed',
+                'data' => null,
             ]);
 
         $this->assertDatabaseMissing('cart_items', [

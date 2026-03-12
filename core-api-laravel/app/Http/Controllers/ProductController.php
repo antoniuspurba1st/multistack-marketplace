@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiResponse;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -19,13 +20,13 @@ class ProductController extends Controller
 
     $products = $query->paginate(10);
 
-    return response()->json($products);
+    return ApiResponse::success($products);
 
 }
 
     public function show($id)
     {
-        return Product::findOrFail($id);
+        return ApiResponse::success(Product::findOrFail($id));
     }
 
     public function store(Request $request)
@@ -41,7 +42,7 @@ class ProductController extends Controller
 
         $product = Product::create($validated);
 
-        return response()->json($product, 201);
+        return ApiResponse::success($product, 'OK', 201);
     }
 
 }
