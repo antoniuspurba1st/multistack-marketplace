@@ -1,0 +1,28 @@
+# Node
+node_modules/
+.next/
+dist/
+
+# Laravel
+vendor/
+.env
+
+# Rust
+target/
+
+# Python
+__pycache__/
+*.pyc
+
+# Rails
+log/*
+tmp/*
+storage/*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
