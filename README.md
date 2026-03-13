@@ -2,6 +2,19 @@
 
 A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks.
 
+## Progress Update - March 13, 2026
+
+Today's progress focused on turning the admin side from a placeholder into a usable catalog operations surface:
+
+- `admin-vue-dashboard` was upgraded from the default Vue starter into a working admin UI for product operations.
+- The admin panel can now list products, search catalog entries, create products, edit products, delete products, and upload product images.
+- `admin-vue-dashboard/src/lib/adminApi.ts` was added as a dedicated API layer for talking to the Laravel gateway.
+- `core-api-laravel` now exposes full product CRUD coverage for the admin workflow, including `show`, `update`, and `delete` routes.
+- Laravel feature tests were expanded to cover product detail, update, and delete behavior.
+- The new admin slice was verified with Laravel tests and a production Vue build.
+
+This shifts the project from "multiple apps exist in the workspace" toward "multiple apps are beginning to support real operational workflows".
+
 ## Progress Update - March 12, 2026
 
 Today's progress focused on expanding the repo from backend-heavy services into a more complete product ecosystem:
@@ -31,7 +44,7 @@ This means the project is no longer just "Laravel + supporting demos". It is now
 ### New apps/services added today
 - `search-service-rust` - search service prototype
 - `seller-service-rails` - seller service scaffold
-- `admin-vue-dashboard` - admin dashboard scaffold
+- `admin-vue-dashboard` - admin dashboard for catalog operations
 
 ### Primary database
 - `PostgreSQL`
@@ -55,7 +68,7 @@ PostgreSQL                      Django Recommendation Service
                                 Node.js Chat Service
                                 Rust Search Service (prototype)
 
-Admin -> Vue Dashboard (planned integration)
+Admin -> Vue Dashboard -> Laravel API Gateway
 Seller -> Rails Seller Service (planned integration)
 ```
 
@@ -101,7 +114,7 @@ Laravel remains the central orchestrator for:
 - Node chat service present in workspace
 - Rust search service bootstrapped and runnable
 - Rails seller service bootstrapped
-- Vue admin dashboard bootstrapped
+- Vue admin dashboard connected for catalog management
 
 ---
 
@@ -128,6 +141,9 @@ These patterns live primarily in `core-api-laravel` and make the project stronge
 GET    /api/products
 GET    /api/products/{id}
 POST   /api/products
+PUT    /api/products/{id}
+DELETE /api/products/{id}
+POST   /api/product/upload
 ```
 
 ### Cart
@@ -158,6 +174,7 @@ Checkout notes:
 The Laravel API already has feature coverage for the main marketplace workflows and backend hardening behaviors, including:
 
 - product listing, creation, search, and pagination
+- product detail, update, and delete
 - cart add/view/remove
 - checkout success flow
 - order item creation
@@ -240,6 +257,12 @@ cd admin-vue-dashboard
 npm install
 npm run dev
 ```
+
+Admin dashboard notes:
+
+- expects the Laravel API gateway to be running on `http://localhost:8000`
+- expects product image storage to be available from Laravel's `/storage` public path
+- currently uses manual `user_id` input for product ownership when creating or editing products
 
 ### Optional Laravel background processing
 

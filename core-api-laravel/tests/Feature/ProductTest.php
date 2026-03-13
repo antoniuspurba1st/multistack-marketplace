@@ -88,6 +88,64 @@ class ProductTest extends TestCase
         ]);
     }
 
+    public function test_can_show_single_product(): void
+    {
+        $product = Product::factory()->create([
+            'name' => 'Mirrorless Camera',
+        ]);
+
+        $response = $this->getJson("/api/products/{$product->id}");
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $product->id)
+            ->assertJsonPath('data.name', 'Mirrorless Camera');
+    }
+
+    public function test_can_update_product(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Old Name',
+            'stock' => 4,
+        ]);
+
+        $response = $this->putJson("/api/products/{$product->id}", [
+            'user_id' => $user->id,
+            'name' => 'Updated Name',
+            'description' => 'Updated description',
+            'price' => 899.50,
+            'stock' => 7,
+        ]);
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonPath('data.name', 'Updated Name')
+            ->assertJsonPath('data.stock', 7);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => 'Updated Name',
+            'stock' => 7,
+        ]);
+    }
+
+    public function test_can_delete_product(): void
+    {
+        $product = Product::factory()->create();
+
+        $response = $this->deleteJson("/api/products/{$product->id}");
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonPath('message', 'Product deleted');
+
+        $this->assertDatabaseMissing('products', [
+            'id' => $product->id,
+        ]);
+    }
+
     public function test_product_pagination_works(): void
     {
         Product::factory()->count(15)->create();
