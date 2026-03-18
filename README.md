@@ -1,32 +1,16 @@
 # Polyglot Microservices Marketplace
 
-A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks.
+A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks. The system is evolving from simple service separation toward more realistic cross-service checkout coordination and inventory handling.
 
-## Progress Update - March 13, 2026
+## Recent Progress Snapshot
 
-Today's progress focused on turning the admin side from a placeholder into a usable catalog operations surface:
+- `frontend-nextjs` now provides a working buyer flow with product listing, detail, cart, checkout success, and order history.
+- `admin-vue-dashboard` now provides a usable catalog operations surface through the Laravel gateway.
+- `seller-service-rails` is now the active product and inventory service, including reservation-based stock handling.
+- `core-api-laravel` now acts as a gateway and checkout orchestrator rather than owning product persistence directly.
+- The checkout path includes reservation, confirmation, release-on-failure, and outbox-backed retry for follow-up recovery work.
 
-- `admin-vue-dashboard` was upgraded from the default Vue starter into a working admin UI for product operations.
-- The admin panel can now list products, search catalog entries, create products, edit products, delete products, and upload product images.
-- `admin-vue-dashboard/src/lib/adminApi.ts` was added as a dedicated API layer for talking to the Laravel gateway.
-- `core-api-laravel` now exposes full product CRUD coverage for the admin workflow, including `show`, `update`, and `delete` routes.
-- Laravel feature tests were expanded to cover product detail, update, and delete behavior.
-- The new admin slice was verified with Laravel tests and a production Vue build.
-
-This shifts the project from "multiple apps exist in the workspace" toward "multiple apps are beginning to support real operational workflows".
-
-## Progress Update - March 12, 2026
-
-Today's progress focused on expanding the repo from backend-heavy services into a more complete product ecosystem:
-
-- `frontend-nextjs` now has a real storefront flow: homepage, product listing, product detail, cart, checkout success, and order history.
-- `frontend-nextjs/lib/api.ts` already talks to the Laravel gateway for products, cart, checkout, and orders.
-- `search-service-rust` was bootstrapped with `Axum` and exposes a simple `/search` endpoint on port `4000`.
-- `seller-service-rails` was initialized as a dedicated Rails service for future seller-side capabilities.
-- `admin-vue-dashboard` was added as the base for an admin panel in Vue 3 + Vite.
-- `core-api-laravel` continues to own marketplace flows such as product management, cart, checkout, orders, stock protection, idempotency, and outbox processing.
-
-This means the project is no longer just "Laravel + supporting demos". It is now moving into a multi-app marketplace workspace with dedicated surfaces for buyers, admins, sellers, and supporting services.
+This keeps the project grounded as a portfolio repo while showing a more realistic move toward coordinated service boundaries.
 
 ---
 
@@ -34,17 +18,15 @@ This means the project is no longer just "Laravel + supporting demos". It is now
 
 ### User-facing apps
 - `frontend-nextjs` - buyer storefront built with Next.js App Router
+- `admin-vue-dashboard` - admin dashboard for catalog operations
 
 ### Core platform
-- `core-api-laravel` - API gateway and main marketplace backend
+- `core-api-laravel` - API gateway and marketplace orchestration layer
+- `seller-service-rails` - product and inventory service
 - `recommendation-ai-django` - recommendation service
 - `auth-service-go` - authentication service
 - `chat-service-node` - realtime chat service
-
-### New apps/services added today
 - `search-service-rust` - search service prototype
-- `seller-service-rails` - seller service scaffold
-- `admin-vue-dashboard` - admin dashboard for catalog operations
 
 ### Primary database
 - `PostgreSQL`
@@ -59,28 +41,32 @@ Buyer
 Next.js Storefront
   |
 Laravel API Gateway
-  |------------------------------\
-  |                               \
-Marketplace Logic                  \
-  |                                 \
-PostgreSQL                      Django Recommendation Service
-                                Go Authentication Service
-                                Node.js Chat Service
-                                Rust Search Service (prototype)
+  |-------------------------------\
+  |                                \
+PostgreSQL                          Rails Seller Service
+                                    (products, inventory, reservations)
+                                    Django Recommendation Service
+                                    Go Authentication Service
+                                    Node.js Chat Service
+                                    Rust Search Service (prototype)
 
 Admin -> Vue Dashboard -> Laravel API Gateway
-Seller -> Rails Seller Service (planned integration)
 ```
 
 Laravel remains the central orchestrator for:
 
-- product catalog
+- product gateway endpoints
 - cart operations
-- checkout and order creation
-- stock protection
+- coordinated checkout and order creation
 - idempotent requests
-- outbox event creation
+- outbox-driven follow-up work
 - recommendation calls
+
+Rails now owns:
+
+- product data
+- inventory state
+- stock reservation, confirmation, and release
 
 ---
 
@@ -97,24 +83,39 @@ Laravel remains the central orchestrator for:
 - Order history page
 
 ### Laravel backend
-- Product CRUD foundations
+- Product gateway CRUD foundations
 - Search and pagination
 - Product image upload
 - Cart add/view/remove
 - Transaction-safe checkout
-- Atomic stock decrement
+- Reservation-based stock handling
+- Coordinated checkout with confirm and release steps
 - `Idempotency-Key` support
-- Outbox event persistence
+- Outbox event persistence and retry processing
 - Order history API
 - Recommendation service integration with caching
 
 ### Supporting services
+- Rails seller service handles product and inventory lifecycle, including reserve, confirm, and release flows
 - Django recommendation endpoint integrated into checkout
 - Go auth service present in workspace
 - Node chat service present in workspace
 - Rust search service bootstrapped and runnable
-- Rails seller service bootstrapped
 - Vue admin dashboard connected for catalog management
+
+---
+
+## Checkout Flow
+
+The current checkout path keeps Laravel focused on orchestration while Rails owns inventory behavior:
+
+1. Laravel asks Rails to reserve stock for the cart items.
+2. Laravel creates the order and order items inside its own database transaction.
+3. If the transaction succeeds, Laravel confirms the reservation.
+4. If the transaction fails, Laravel releases the reservation.
+5. If confirm or release cannot be completed immediately, Laravel records an outbox event and retries it asynchronously.
+
+This reduces inconsistency during partial failures without pushing product ownership back into Laravel.
 
 ---
 
@@ -122,9 +123,13 @@ Laravel remains the central orchestrator for:
 
 - request validation
 - reduced transaction scope
-- atomic stock protection
+- reservation pattern for stock handling
+- coordinated checkout with confirm and release steps
+- compensation for failed checkout steps
 - idempotent checkout
 - outbox pattern
+- retry + timeout for seller-service calls
+- basic circuit breaker for seller-service failures
 - structured logging
 - scheduled outbox processing
 - recommendation caching
@@ -167,31 +172,47 @@ Checkout notes:
 - supports `Idempotency-Key` in request headers
 - returns `order` and `recommendations`
 
+### Seller service coordination
+
+These endpoints are used by Laravel when coordinating checkout with the Rails seller service:
+
+```text
+POST   /products/reserve
+POST   /products/confirm
+POST   /products/release
+```
+
 ---
 
 ## Testing
 
-The Laravel API already has feature coverage for the main marketplace workflows and backend hardening behaviors, including:
+The repo includes coverage for the main marketplace workflows and the newer cross-service checkout behaviors, including:
 
 - product listing, creation, search, and pagination
 - product detail, update, and delete
 - cart add/view/remove
 - checkout success flow
-- order item creation
-- atomic stock reduction
-- validation failure
+- reservation, confirm, and release behavior
+- failure simulation and release fallback
+- retry behavior for seller-service calls
 - idempotent checkout replay
-- rollback on insufficient stock
 - outbox event creation and processing
-- scheduler registration
 - recommendation caching and fallback
+- Rails reservation logic, stock locking, and insufficient stock handling
 - product image upload and persistence
 
-Run backend tests with:
+Run Laravel tests with:
 
 ```bash
 cd core-api-laravel
 php artisan test
+```
+
+Run Rails seller-service tests with:
+
+```bash
+cd seller-service-rails
+RAILS_ENV=test bin/rails test
 ```
 
 ---
@@ -250,6 +271,11 @@ cd seller-service-rails
 bin/rails server
 ```
 
+Seller service notes:
+
+- owns product and inventory behavior
+- exposes reservation endpoints used by Laravel during checkout
+
 ### Vue Admin Dashboard
 
 ```bash
@@ -280,13 +306,14 @@ php artisan outbox:process
 
 ## Why This Project Matters
 
-This repo is evolving into a stronger backend/full-stack portfolio project because it demonstrates:
+This repo is evolving into a stronger backend and full-stack portfolio project because it demonstrates:
 
 - polyglot service boundaries across PHP, Python, Go, Node.js, Rust, Ruby, and TypeScript
-- API gateway orchestration
-- transaction-safe checkout design
+- API gateway orchestration across multiple services
+- coordinated checkout with reservation-based inventory handling
+- failure recovery through release flows and outbox-backed retry
 - frontend integration against live backend APIs
-- room for buyer, admin, and seller experiences in separate apps
-- production-style patterns such as idempotency, stock protection, and outbox processing
+- room for buyer, admin, and supporting service experiences in separate apps
+- practical resilience patterns such as idempotency, retry, timeout, logging, and a basic circuit breaker
 
 The main value is not only that the marketplace works, but that the architecture is being expanded in a realistic direction.

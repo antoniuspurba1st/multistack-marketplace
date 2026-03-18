@@ -2,64 +2,80 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ExternalServiceException;
 use App\Helpers\ApiResponse;
-use App\Models\Product;
+use App\Services\SellerService;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    private function rules(): array
+    public function __construct(private SellerService $sellerService)
     {
-        return [
-            'user_id' => 'required|exists:users,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer|min:0',
-        ];
     }
 
     public function index(Request $request)
     {
-        $query = Product::with('images');
-
-        if ($request->search) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+        try {
+            return ApiResponse::success(
+                $this->sellerService->listProducts($request->search)
+            );
+        } catch (ExternalServiceException $exception) {
+            return ApiResponse::error($exception->getMessage(), $exception->status());
         }
-
-        $products = $query->latest()->paginate(10);
-
-        return ApiResponse::success($products);
     }
 
     public function show($id)
     {
-        return ApiResponse::success(Product::with('images')->findOrFail($id));
+        try {
+            $product = $this->sellerService->getProduct((int) $id);
+        } catch (ExternalServiceException $exception) {
+            return ApiResponse::error($exception->getMessage(), $exception->status());
+        }
+
+        if (! $product) {
+            return ApiResponse::error('Product not found', 404);
+        }
+
+        return ApiResponse::success($product);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate($this->rules());
-
-        $product = Product::create($validated);
+        try {
+            $product = $this->sellerService->createProduct([
+                'name' => $request->name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+            ]);
+        } catch (ExternalServiceException $exception) {
+            return ApiResponse::error($exception->getMessage(), $exception->status());
+        }
 
         return ApiResponse::success($product, 'OK', 201);
     }
 
     public function update(Request $request, $id)
     {
-        $product = Product::findOrFail($id);
-        $validated = $request->validate($this->rules());
+        try {
+            $product = $this->sellerService->updateProduct((int) $id, [
+                'name' => $request->name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+            ]);
+        } catch (ExternalServiceException $exception) {
+            return ApiResponse::error($exception->getMessage(), $exception->status());
+        }
 
-        $product->update($validated);
-
-        return ApiResponse::success($product->load('images'));
+        return ApiResponse::success($product);
     }
 
     public function destroy($id)
     {
-        $product = Product::findOrFail($id);
-        $product->delete();
+        try {
+            $this->sellerService->deleteProduct((int) $id);
+        } catch (ExternalServiceException $exception) {
+            return ApiResponse::error($exception->getMessage(), $exception->status());
+        }
 
         return ApiResponse::success(null, 'Product deleted');
     }

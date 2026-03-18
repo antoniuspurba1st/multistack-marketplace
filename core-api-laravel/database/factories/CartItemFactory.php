@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +17,7 @@ class CartItemFactory extends Factory
     {
         return [
             'cart_id' => Cart::factory(),
-            'product_id' => Product::factory(),
+            'product_id' => fake()->numberBetween(1, 1000),
             'quantity' => fake()->numberBetween(1, 5),
         ];
     }

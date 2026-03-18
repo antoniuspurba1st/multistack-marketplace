@@ -35,8 +35,18 @@ return [
         ],
     ],
 
+    'seller' => [
+        'url' => env('SELLER_SERVICE_URL'),
+        'timeout' => env('SELLER_SERVICE_TIMEOUT', 3),
+        'retry_times' => env('SELLER_SERVICE_RETRY_TIMES', 3),
+        'retry_backoff_ms' => env('SELLER_SERVICE_RETRY_BACKOFF_MS', 100),
+        'circuit_breaker_threshold' => env('SELLER_SERVICE_CIRCUIT_THRESHOLD', 3),
+        'circuit_breaker_seconds' => env('SELLER_SERVICE_CIRCUIT_SECONDS', 30),
+        'product_cache_ttl_seconds' => env('SELLER_SERVICE_PRODUCT_CACHE_TTL', 300),
+    ],
+
     'recommendation' => [
-    'url' => env('RECOMMENDATION_SERVICE_URL', 'http://localhost:8002'),
-],
+        'url' => env('RECOMMENDATION_SERVICE_URL', 'http://localhost:8002'),
+    ],
 
 ];
