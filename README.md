@@ -1,6 +1,6 @@
 # Polyglot Microservices Marketplace
 
-![Architecture](docs/polyglot_multistack_microservice.png)
+![Architecture](docs/polyglot_multistack_microservice.webp)
 
 A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks. The system is evolving from simple service separation toward more realistic cross-service checkout coordination and inventory handling.
 
