@@ -1,5 +1,7 @@
 # Polyglot Microservices Marketplace
 
+![Architecture](docs/polyglot multistack microservice.png)
+
 A portfolio marketplace project built to demonstrate a production-style polyglot architecture with one storefront, one API gateway, and several supporting services written in different stacks. The system is evolving from simple service separation toward more realistic cross-service checkout coordination and inventory handling.
 
 ## Recent Progress Snapshot
@@ -17,10 +19,12 @@ This keeps the project grounded as a portfolio repo while showing a more realist
 ## Current Workspace
 
 ### User-facing apps
+
 - `frontend-nextjs` - buyer storefront built with Next.js App Router
 - `admin-vue-dashboard` - admin dashboard for catalog operations
 
 ### Core platform
+
 - `core-api-laravel` - API gateway and marketplace orchestration layer
 - `seller-service-rails` - product and inventory service
 - `recommendation-ai-django` - recommendation service
@@ -29,6 +33,7 @@ This keeps the project grounded as a portfolio repo while showing a more realist
 - `search-service-rust` - search service prototype
 
 ### Primary database
+
 - `PostgreSQL`
 
 ---
@@ -73,6 +78,7 @@ Rails now owns:
 ## Implemented Marketplace Features
 
 ### Frontend storefront
+
 - Homepage with featured products
 - Product listing with live data from Laravel
 - Product detail page
@@ -83,6 +89,7 @@ Rails now owns:
 - Order history page
 
 ### Laravel backend
+
 - Product gateway CRUD foundations
 - Search and pagination
 - Product image upload
@@ -96,6 +103,7 @@ Rails now owns:
 - Recommendation service integration with caching
 
 ### Supporting services
+
 - Rails seller service handles product and inventory lifecycle, including reserve, confirm, and release flows
 - Django recommendation endpoint integrated into checkout
 - Go auth service present in workspace
